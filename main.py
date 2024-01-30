@@ -5,7 +5,7 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidgetItem, QWidget
 
 
-class EditItem(QWidget):
+class AddItem(QWidget):
     def __init__(self):
         QWidget.__init__(self)
         uic.loadUi('addEditCoffeeForm.ui', self)
@@ -29,6 +29,40 @@ class EditItem(QWidget):
         self.close()
 
 
+class EditItem(QWidget):
+    def __init__(self, id_item, sort, fry, description, beans, price, volume):
+        QWidget.__init__(self)
+        uic.loadUi('addEditCoffeeForm.ui', self)
+        self.lineEdit_sort.setText(sort)
+        self.lineEdit_fry.setText(fry)
+        self.lineEdit_description.setText(description)
+        self.comboBox_bean.setCurrentText(beans)
+        self.doubleSpinBox.setValue(float(price))
+        self.spinBox_2.setValue(int(volume))
+        self.pushButton_cancel.clicked.connect(self.cancel)
+        self.pushButton_ok.clicked.connect(self.ok)
+        self.id_item = id_item
+
+    def ok(self):
+        connection = sqlite3.connect('coffee.sqlite')
+        cursor = connection.cursor()
+        sort = self.lineEdit_sort.text()
+        fry = self.lineEdit_fry.text()
+        description = self.lineEdit_description.text()
+        beans = self.comboBox_bean.currentText()
+        price = self.doubleSpinBox.value()
+        volume = self.spinBox_2.value()
+        # sort_coffee, roasting, "ground grains", taste, price, volum
+        cursor.execute('UPDATE coffee_info SET sort_coffee=?, roasting=?, "ground grains"=?, taste=?, price=?, '
+                       'volum=? WHERE ID=?', (sort, fry, description, beans, price, volume, self.id_item))
+        connection.commit()
+        connection.close()
+        self.close()
+
+
+    def cancel(self):
+        self.close()
+
 class MyWidget(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -50,21 +84,24 @@ class MyWidget(QMainWindow):
         id_item = int(self.tableWidget.item(selected_row, 0).text())
         sort = self.tableWidget.item(selected_row, 1).text()
         fry = self.tableWidget.item(selected_row, 2).text()
-        description = self.tableWidget.item(selected_row, 3).text()
-        beans = self.tableWidget.item(selected_row, 4).text()
+        beans = self.tableWidget.item(selected_row, 3).text()
+        description = self.tableWidget.item(selected_row, 4).text()
+
         price = self.tableWidget.item(selected_row, 5).text()
         volume = self.tableWidget.item(selected_row, 6).text()
-        connection = sqlite3.connect('coffee.sqlite')
-        cursor = connection.cursor()
-        # sort_coffee, roasting, "ground grains", taste, price, volum
-        cursor.execute('UPDATE coffee_info SET sort_coffee=?, roasting=?, "ground grains"=?, taste=?, price=?, '
-                       'volum=? WHERE ID=?', (sort, fry, description, beans, price, volume, id_item))
-        connection.commit()
-        connection.close()
+        self.edit = EditItem(id_item, sort, fry, description, beans, price, volume)
+        self.edit.show()
 
+        # connection = sqlite3.connect('coffee.sqlite')
+        # cursor = connection.cursor()
+        # # sort_coffee, roasting, "ground grains", taste, price, volum
+        # cursor.execute('UPDATE coffee_info SET sort_coffee=?, roasting=?, "ground grains"=?, taste=?, price=?, '
+        #                'volum=? WHERE ID=?', (sort, fry, description, beans, price, volume, id_item))
+        # connection.commit()
+        # connection.close()
 
     def add(self):
-        self.item = EditItem()
+        self.item = AddItem()
         self.item.show()
 
     def run(self):
